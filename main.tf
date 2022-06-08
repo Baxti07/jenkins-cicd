@@ -1,79 +1,77 @@
-# Creating main vpc
+# Create VPC
 resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block = var.vpc_cidr
   tags = {
-    "Name" = "Dev-VPC"
+    Name = "VPC-${var.tag}"
   }
 }
-
-# Creating subnets
-resource "aws_subnet" "public_subnet_one" {
+# Create Public Subnet
+resource "aws_subnet" "public_subnet" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.pub_subnet_cidr
+  availability_zone = var.av_zones.1
+  tags = {
+    Name = "Public-${var.tag}"
+  }
+}
+# Create Private Subnet
+resource "aws_subnet" "private_subnet" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.prv_subnet_cidr
+  availability_zone = var.av_zones.2
+  tags = {
+    Name = "Private-${var.tag}"
+  }
+}
+# Creating Internet Gateway
+resource "aws_internet_gateway" "internet_gateway" {
   vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.1.0/24"
   tags = {
-    "Name" = "Dev-Public-Subnet-One"
+    Name = "Internet-${var.tag}"
   }
 }
-
-# Creating subnets
-resource "aws_subnet" "public_subnet_two" {
+# # NAT Gateway
+# resource "aws_nat_gateway" "nat_gateway" {
+#   connectivity_type = "private"
+#   subnet_id         = aws_subnet.private_subnet.id
+#   tags = {
+#     Name = "NAT-${var.tag}"
+#   }
+# }
+# Creating Public Route Table
+resource "aws_route_table" "public_route_table" {
   vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.2.0/24"
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.internet_gateway.id
+  }
   tags = {
-    "Name" = "Dev-Public-Subnet-Two"
+    Name = "Public-${var.tag}-Table"
   }
 }
-
-# Creating subnets
-resource "aws_subnet" "public_subnet_three" {
-  vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.3.0/24"
-  tags = {
-    "Name" = "Dev-Public-Subnet-Three"
-  }
+# # Creating Private Route Table
+# resource "aws_route_table" "private_route_table" {
+#   vpc_id = aws_vpc.main.id
+#   route {
+#     cidr_block = "0.0.0.0/0"
+#     gateway_id = aws_nat_gateway.nat_gateway.id
+#   }
+#   tags = {
+#     Name = "Private-${var.tag}-Table"
+#   }
+# }
+# # Main Route Table association
+# resource "aws_main_route_table_association" "c" {
+#   vpc_id         = aws_vpc.main.id
+#   route_table_id = aws_route_table.private_route_table.id
+# }
+# Route Table association with Public Subnet
+resource "aws_route_table_association" "a" {
+  subnet_id      = aws_subnet.public_subnet.id
+  route_table_id = aws_route_table.public_route_table.id
 }
-
-# Creating subnets
-resource "aws_subnet" "public_subnet_four" {
-  vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.4.0/24"
-  tags = {
-    "Name" = "Dev-Public-Subnet-Four"
-  }
-}
-
-# Creating subnets
-resource "aws_subnet" "private_subnet_one" {
-  vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.5.0/24"
-  tags = {
-    "Name" = "Dev-Private-Subnet-One"
-  }
-}
-
-# Creating subnets
-resource "aws_subnet" "private_subnet_two" {
-  vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.6.0/24"
-  tags = {
-    "Name" = "Dev-Private-Subnet-Two"
-  }
-}
-
-# Creating subnets
-resource "aws_subnet" "private_subnet_three" {
-  vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.7.0/24"
-  tags = {
-    "Name" = "Dev-Private-Subnet-Three"
-  }
-}
-
-# Creating subnets
-resource "aws_subnet" "private_subnet_four" {
-  vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.8.0/24"
-  tags = {
-    "Name" = "Dev-Private-Subnet-Four"
-  }
-}
+# # Route Table association with Private Subnet
+# resource "aws_route_table_association" "b" {
+#   subnet_id      = aws_subnet.private_subnet.id
+#   route_table_id = aws_route_table.private_route_table.id
+# }
