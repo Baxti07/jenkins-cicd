@@ -4,31 +4,27 @@ pipeline {
         terraform 'terraform'
     }
     stages {
-        stage('Terraform Apply') {
-            when {
-                expression {
-                    return params.action == 'apply'
-                }
-            }
+        stage('Git init') {
             steps {
-                git 'https://github.com/Baxti07/jenkins-cicd'
-
+                git credentialsId: 'terraform-cicd-token', url: 'https://github.com/Baxti07/jenkins-cicd'
+            }
+        }
+        stage('Terraform init') {
+            steps {
                 sh 'terraform init -no-color'
-
-                echo "terraform action from paratmetr is --> ${action}"
-
-                sh "terraform ${action} --auto-approve"
+            }
+        }
+        stage('Terraform plan') {
+            steps {
+                sh 'terraform plan -destroy -no-color'
             }
         }
         stage('Terraform Destroy') {
-            when {
-                expression {
-                    return params.action == 'destroy'
-                }
+            input {
+                message "Do you want to destroy deployment?"
             }
             steps {
-                echo "terraform action from paratmetr is --> ${action}"
-                sh "terraform ${action} --auto-approve"
+                sh 'terraform destroy --auto-approve -no-color'
             }
         }
     }
